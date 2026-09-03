@@ -4,14 +4,10 @@ services:
   - type: web
     name: count-automation
     runtime: python
-    plan: starter          # "starter" ($7/mo) is needed for the persistent disk below.
+    plan: free          # "starter" ($7/mo) is needed for the persistent disk below.
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn wsgi:application
     autoDeploy: true
-    disk:
-      name: data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
