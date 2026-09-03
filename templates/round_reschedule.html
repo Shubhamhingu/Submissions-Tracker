@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Reschedule round · Count Automation{% endblock %}
+{% block body %}
+<a href="{{ url_for('opportunity_detail', opp_id=rnd.opportunity_id) }}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Back</a>
+<h3 class="mt-1 mb-1">Reschedule round {{ rnd.round_number }}</h3>
+<p class="text-muted">Current: {{ rnd.scheduled_date | d }} {{ rnd.start_time | t }}{% if rnd.end_time %}–{{ rnd.end_time | t }}{% endif %}. The round number stays the same; the old slot is saved to history.</p>
+
+<form method="post" style="max-width: 620px;">
+  <div class="card chart-card mb-3"><div class="card-body">
+    <div class="row g-2">
+      <div class="col-md-6">
+        <label class="form-label small">New date</label>
+        <input type="date" name="scheduled_date" class="form-control form-control-sm" value="{{ rnd.scheduled_date.isoformat() if rnd.scheduled_date else '' }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">New start</label>
+        <input type="time" name="start_time" class="form-control form-control-sm" value="{{ rnd.start_time.strftime('%H:%M') if rnd.start_time else '' }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">New end</label>
+        <input type="time" name="end_time" class="form-control form-control-sm" value="{{ rnd.end_time.strftime('%H:%M') if rnd.end_time else '' }}">
+      </div>
+      <div class="col-12">
+        <label class="form-label small">Reason / note</label>
+        <input name="reason" class="form-control form-control-sm" placeholder="e.g. interviewer sick, moved to next week">
+      </div>
+    </div>
+  </div></div>
+  <button class="btn btn-warning">Reschedule</button>
+  <a href="{{ url_for('opportunity_detail', opp_id=rnd.opportunity_id) }}" class="btn btn-outline-secondary">Cancel</a>
+</form>
+{% endblock %}

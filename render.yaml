@@ -1,0 +1,27 @@
+# Render Blueprint -- deploy with: Render dashboard -> New -> Blueprint -> pick this repo.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: count-automation
+    runtime: python
+    plan: starter          # "starter" ($7/mo) is needed for the persistent disk below.
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:application
+    autoDeploy: true
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: DATABASE_URL
+        value: sqlite:////var/data/count_automation.db   # 4 slashes = absolute path
+      - key: SECRET_KEY
+        generateValue: true          # Render generates a random value
+      - key: APP_PASSWORD_HASH
+        sync: false                  # you paste this in the dashboard
+      - key: OPENAI_API_KEY
+        sync: false                  # optional; enables the "Ask the data" tab
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini

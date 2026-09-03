@@ -1,0 +1,14 @@
+[project]
+name = "count-automation"
+version = "0.1.0"
+description = "Job submission & interview tracker (Flask + SQLite)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=3.0",
+    "flask-sqlalchemy>=3.1",
+    "python-dateutil>=2.9",
+    "python-dotenv>=1.0",
+    "openai>=1.40",
+    "gunicorn>=21.2",
+]

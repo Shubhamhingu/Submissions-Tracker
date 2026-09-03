@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if rnd else 'Schedule' }} round · Count Automation{% endblock %}
+{% block body %}
+<a href="{{ url_for('opportunity_detail', opp_id=opp.id) }}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> {{ opp.position_title or 'Opportunity' }}</a>
+<h3 class="mt-1 mb-1">{{ 'Edit round ' ~ rnd.round_number if rnd else 'Schedule interview round' }}</h3>
+<p class="text-muted">{{ opp.name('vendor') or '' }}{% if opp.name('end_client') %} · {{ opp.name('end_client') }}{% endif %}</p>
+
+<form method="post" style="max-width: 720px;">
+  <div class="card chart-card mb-3"><div class="card-body">
+    <h6 class="fw-600">Schedule</h6>
+    <div class="row g-2">
+      <div class="col-md-3">
+        <label class="form-label small">Round number</label>
+        <input type="number" min="0" name="round_number" class="form-control form-control-sm" value="{{ rnd.round_number if rnd else default_round }}">
+        <div class="form-text small">0 = screening / recruiter call. You can add more than one entry with the same number (e.g. a rescheduled attempt kept alongside the real one).</div>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label small">Scheduled date</label>
+        <input type="date" name="scheduled_date" class="form-control form-control-sm" value="{{ rnd.scheduled_date.isoformat() if rnd and rnd.scheduled_date else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small">Interview mode</label>
+        <select name="interview_mode" class="form-select form-select-sm">
+          <option value="">—</option>
+          {% for m in interview_modes %}<option value="{{ m }}" {{ 'selected' if rnd and rnd.interview_mode == m }}>{{ m }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">Start time</label>
+        <input type="time" name="start_time" class="form-control form-control-sm" value="{{ rnd.start_time.strftime('%H:%M') if rnd and rnd.start_time else '' }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">End time</label>
+        <input type="time" name="end_time" class="form-control form-control-sm" value="{{ rnd.end_time.strftime('%H:%M') if rnd and rnd.end_time else '' }}">
+      </div>
+    </div>
+  </div></div>
+
+  <div class="card chart-card mb-3"><div class="card-body">
+    <h6 class="fw-600">After the interview</h6>
+    <div class="row g-2">
+      <div class="col-md-4">
+        <label class="form-label small">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if (rnd and rnd.status == s) or (not rnd and s == 'Scheduled') }}>{{ s }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small">Outcome</label>
+        <select name="outcome" class="form-select form-select-sm">
+          {% for o in outcomes %}<option value="{{ o }}" {{ 'selected' if (rnd and rnd.outcome == o) or (not rnd and o == 'Pending') }}>{{ o }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check">
+          <input type="checkbox" name="is_final" value="1" class="form-check-input" id="is_final" {{ 'checked' if rnd and rnd.is_final }}>
+          <label for="is_final" class="form-check-label">This was the final round</label>
+        </div>
+      </div>
+      <div class="col-12">
+        <label class="form-label small">SME review — technical / subject-matter interviewer feedback</label>
+        <textarea name="sme_review" rows="3" class="form-control form-control-sm">{{ rnd.sme_review or '' if rnd else '' }}</textarea>
+      </div>
+      <div class="col-12">
+        <label class="form-label small">PS review — pod / recruiter (presales) feedback</label>
+        <textarea name="ps_review" rows="3" class="form-control form-control-sm">{{ rnd.ps_review or '' if rnd else '' }}</textarea>
+      </div>
+      <div class="col-12">
+        <label class="form-label small">Notes</label>
+        <input name="notes" class="form-control form-control-sm" value="{{ rnd.notes or '' if rnd else '' }}">
+      </div>
+    </div>
+  </div></div>
+
+  <button class="btn btn-primary">Save round</button>
+  <a href="{{ url_for('opportunity_detail', opp_id=opp.id) }}" class="btn btn-outline-secondary">Cancel</a>
+</form>
+{% endblock %}

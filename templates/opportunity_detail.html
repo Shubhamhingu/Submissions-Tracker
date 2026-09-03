@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}{{ opp.position_title or 'Opportunity' }} · Count Automation{% endblock %}
+{% block body %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div>
+    <a href="{{ url_for('opportunities') }}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Opportunities</a>
+    <h3 class="mb-0 mt-1">{{ opp.position_title or '(untitled)' }}</h3>
+    <div class="text-muted">
+      {{ opp.name('vendor') or '—' }}
+      {% if opp.name('end_client') %} · end client: {{ opp.name('end_client') }}{% endif %}
+      · submitted {{ opp.submission_date | d }}
+      {% if opp.status %}· <span class="badge text-bg-secondary">{{ opp.status }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('opportunity_edit', opp_id=opp.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil"></i> Edit</a>
+    <a href="{{ url_for('round_new', opp_id=opp.id) }}" class="btn btn-sm btn-primary"><i class="bi bi-calendar-plus"></i> Schedule round</a>
+    <form method="post" action="{{ url_for('opportunity_delete', opp_id=opp.id) }}" onsubmit="return confirm('Delete this opportunity and all its rounds?')">
+      <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card chart-card"><div class="card-body">
+      <h6 class="fw-600">Details</h6>
+      <table class="table table-sm mb-0">
+        <tbody>
+          <tr><th class="text-muted fw-normal" style="width:45%">Recruiter (PS)</th><td>{{ opp.name('recruiter') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">Pod</th><td>{{ opp.name('pod') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">Marketing profile</th><td>{{ opp.name('marketing_profile') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">Vendor</th><td>{{ opp.name('vendor') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">Implementation partner</th><td>{{ opp.name('imp_partner') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">Prime vendor</th><td>{{ opp.name('prime_vendor') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">End client</th><td>{{ opp.name('end_client') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">VRM</th><td>{{ opp.name('vrm') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">Technology</th><td>{{ opp.name('technology') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">Company</th><td>{{ opp.name('company') or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">Duration</th><td>{{ opp.duration or '—' }}</td></tr>
+          <tr><th class="text-muted fw-normal">Confirmation date</th><td>{{ opp.confirmation_date | d }}</td></tr>
+          <tr><th class="text-muted fw-normal">Actual start</th><td>{{ opp.actual_start | d }}</td></tr>
+          <tr><th class="text-muted fw-normal">Source</th><td>{{ opp.source }}</td></tr>
+        </tbody>
+      </table>
+    </div></div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card chart-card mb-3"><div class="card-body">
+      <h6 class="fw-600">Classification &amp; compensation</h6>
+      <div class="row">
+        <div class="col-sm-6">
+          <p class="mb-1"><span class="text-muted">Employment type:</span> <strong>{{ opp.employment_type or 'not set' }}</strong></p>
+          <p class="mb-1"><span class="text-muted">Pay:</span> <strong>{{ opp.pay_display or 'not set' }}</strong>
+            {% if opp.pay_rate_type %}<span class="text-muted small">({{ opp.pay_rate_type }})</span>{% endif %}</p>
+        </div>
+        <div class="col-sm-6">
+          <p class="mb-1"><span class="text-muted">Work mode:</span> <strong>{{ opp.work_mode or 'not set' }}</strong></p>
+          {% if opp.onsite_city or opp.onsite_state %}
+          <p class="mb-1"><span class="text-muted">Onsite location:</span> {{ opp.onsite_city or '' }}{{ ', ' ~ opp.onsite_state if opp.onsite_state }}</p>
+          {% endif %}
+          <p class="mb-0 text-muted small">CSV said: {{ opp.csv_is_remote or '—' }}</p>
+        </div>
+      </div>
+      {% if opp.comp_notes %}<p class="mb-0 mt-2"><span class="text-muted">Notes:</span> {{ opp.comp_notes }}</p>{% endif %}
+    </div></div>
+
+    <div class="card chart-card"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="fw-600 mb-0">Interview rounds ({{ opp.rounds|length }})</h6>
+        <a href="{{ url_for('round_new', opp_id=opp.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg"></i> Round {{ opp.max_round + 1 }}</a>
+      </div>
+      {% for r in opp.rounds %}
+      <div class="border rounded p-3 mb-2">
+        <div class="d-flex justify-content-between">
+          <div>
+            <strong>Round {{ r.round_number }}</strong>
+            <span class="badge text-bg-{{ {'Completed':'success','Cancelled':'danger','No-show':'danger','Rescheduled':'warning'}.get(r.status,'info') }}">{{ r.status }}</span>
+            {% if r.is_final %}<span class="badge text-bg-success">Final</span>{% endif %}
+            {% if r.outcome and r.outcome != 'Pending' %}<span class="badge text-bg-{{ 'success' if r.outcome == 'Pass' else 'danger' }}">{{ r.outcome }}</span>{% endif %}
+          </div>
+          <div class="text-nowrap">
+            <a href="{{ url_for('round_reschedule', round_id=r.id) }}" class="btn btn-sm btn-outline-warning py-0"><i class="bi bi-calendar-event"></i> Reschedule</a>
+            <a href="{{ url_for('round_edit', round_id=r.id) }}" class="btn btn-sm btn-outline-secondary py-0"><i class="bi bi-pencil"></i></a>
+            <form method="post" action="{{ url_for('round_delete', round_id=r.id) }}" class="d-inline" onsubmit="return confirm('Delete round {{ r.round_number }}?')">
+              <button class="btn btn-sm btn-outline-danger py-0"><i class="bi bi-trash"></i></button>
+            </form>
+          </div>
+        </div>
+        <div class="small text-muted mt-1">
+          {{ r.scheduled_date | d }}
+          {% if r.start_time %}· {{ r.start_time | t }}{% if r.end_time %}–{{ r.end_time | t }}{% endif %}{% endif %}
+          {% if r.interview_mode %}· {{ r.interview_mode }}{% endif %}
+        </div>
+        {% if r.sme_review %}<p class="mb-1 mt-2 small"><strong>SME (technical) review:</strong><br>{{ r.sme_review }}</p>{% endif %}
+        {% if r.ps_review %}<p class="mb-1 small"><strong>PS (pod / recruiter) review:</strong><br>{{ r.ps_review }}</p>{% endif %}
+        {% if r.notes %}<p class="mb-1 small text-muted">{{ r.notes }}</p>{% endif %}
+        {% if r.reschedules %}
+        <details class="small mt-1"><summary class="text-muted">Reschedule history ({{ r.reschedules|length }})</summary>
+          <ul class="mb-0 ps-3">
+          {% for h in r.reschedules %}
+            <li>{{ h.changed_at.strftime('%d %b %Y') }}: {{ h.old_date | d }} {{ h.old_start_time | t }} → {{ h.new_date | d }} {{ h.new_start_time | t }}{% if h.reason %} — {{ h.reason }}{% endif %}</li>
+          {% endfor %}
+          </ul>
+        </details>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="text-muted small mb-0">No rounds yet. Schedule one when you get an interview call.</p>
+      {% endfor %}
+    </div></div>
+  </div>
+</div>
+
+{% if opp.job_description %}
+<div class="card chart-card mt-3"><div class="card-body">
+  <h6 class="fw-600">Job description</h6>
+  <p class="mb-0" style="white-space: pre-wrap;">{{ opp.job_description }}</p>
+</div></div>
+{% endif %}
+{% endblock %}

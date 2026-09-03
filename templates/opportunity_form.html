@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if opp else 'Add' }} opportunity · Count Automation{% endblock %}
+{% block body %}
+{% set show_csv = (not opp) or opp.source == 'manual' %}
+<a href="{{ url_for('opportunity_detail', opp_id=opp.id) if opp else url_for('opportunities') }}" class="text-decoration-none small"><i class="bi bi-arrow-left"></i> Back</a>
+<h3 class="mt-1 mb-3">{{ 'Edit opportunity' if opp else 'Add opportunity' }}</h3>
+
+{% macro dim(field, label) %}
+  <div class="col-md-4">
+    <label class="form-label small">{{ label }}</label>
+    <input list="dl_{{ field }}" name="{{ field }}" class="form-control form-control-sm"
+           value="{{ opp.name(field) or '' if opp else '' }}">
+    <datalist id="dl_{{ field }}">
+      {% for o in dim_options[field] %}<option value="{{ o }}">{% endfor %}
+    </datalist>
+  </div>
+{% endmacro %}
+
+<form method="post">
+  {% if show_csv %}
+  <div class="card chart-card mb-3"><div class="card-body">
+    <h6 class="fw-600">Job details</h6>
+    <div class="row g-2">
+      <div class="col-md-8">
+        <label class="form-label small">Position title</label>
+        <input name="position_title" class="form-control form-control-sm" value="{{ opp.position_title or '' if opp else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small">Status</label>
+        <input name="status" class="form-control form-control-sm" value="{{ opp.status or '' if opp else 'ACTIVE' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small">Submission date</label>
+        <input type="date" name="submission_date" class="form-control form-control-sm"
+               value="{{ opp.submission_date.isoformat() if opp and opp.submission_date else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small">Confirmation date</label>
+        <input type="date" name="confirmation_date" class="form-control form-control-sm"
+               value="{{ opp.confirmation_date.isoformat() if opp and opp.confirmation_date else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small">Actual start</label>
+        <input type="date" name="actual_start" class="form-control form-control-sm"
+               value="{{ opp.actual_start.isoformat() if opp and opp.actual_start else '' }}">
+      </div>
+      {{ dim('vendor', 'Vendor') }}
+      {{ dim('imp_partner', 'Implementation partner') }}
+      {{ dim('prime_vendor', 'Prime vendor') }}
+      {{ dim('end_client', 'End client') }}
+      {{ dim('recruiter', 'Recruiter (PS)') }}
+      {{ dim('pod', 'Pod') }}
+      {{ dim('marketing_profile', 'Marketing profile') }}
+      {{ dim('vrm', 'VRM') }}
+      {{ dim('technology', 'Technology') }}
+      {{ dim('company', 'Company') }}
+      <div class="col-md-4">
+        <label class="form-label small">Duration</label>
+        <input name="duration" class="form-control form-control-sm" value="{{ opp.duration or '' if opp else '' }}" placeholder="6-months">
+      </div>
+    </div>
+  </div></div>
+  {% else %}
+  <div class="alert alert-light border small">Vendor, client, dates and title come from the CSV import and aren't editable here. The fields below are yours to fill in.</div>
+  {% endif %}
+
+  <div class="card chart-card mb-3"><div class="card-body">
+    <h6 class="fw-600">Job description</h6>
+    <textarea name="job_description" rows="8" class="form-control form-control-sm" placeholder="Paste the full job description here…">{{ opp.job_description or '' if opp else '' }}</textarea>
+    <div class="form-text small">Kept as you enter it — a CSV re-import never overwrites this.</div>
+  </div></div>
+
+  <div class="card chart-card mb-3"><div class="card-body">
+    <h6 class="fw-600">Classification &amp; compensation</h6>
+    <div class="row g-2">
+      <div class="col-md-3">
+        <label class="form-label small">Employment type</label>
+        <select name="employment_type" class="form-select form-select-sm">
+          <option value="">—</option>
+          {% for e in employment_types %}<option value="{{ e }}" {{ 'selected' if opp and opp.employment_type == e }}>{{ e }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">Pay rate type</label>
+        <select name="pay_rate_type" id="pay_rate_type" class="form-select form-select-sm">
+          <option value="">—</option>
+          {% for p in pay_rate_types %}<option value="{{ p }}" {{ 'selected' if opp and opp.pay_rate_type == p }}>{{ p }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small">Pay min <span id="unit_min" class="text-muted"></span></label>
+        <input type="number" step="any" name="pay_min" class="form-control form-control-sm" value="{{ opp.pay_min if opp and opp.pay_min is not none else '' }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small">Pay max <span id="unit_max" class="text-muted"></span></label>
+        <input type="number" step="any" name="pay_max" class="form-control form-control-sm" value="{{ opp.pay_max if opp and opp.pay_max is not none else '' }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label small">Currency</label>
+        <input name="pay_currency" class="form-control form-control-sm" value="{{ opp.pay_currency or 'USD' if opp else 'USD' }}">
+      </div>
+      <div class="col-12">
+        <label class="form-label small">Compensation notes</label>
+        <input name="comp_notes" class="form-control form-control-sm" value="{{ opp.comp_notes or '' if opp else '' }}" placeholder="e.g. rate negotiable, includes benefits…">
+      </div>
+    </div>
+  </div></div>
+
+  <div class="card chart-card mb-3"><div class="card-body">
+    <h6 class="fw-600">Work location</h6>
+    <div class="row g-2">
+      <div class="col-md-3">
+        <label class="form-label small">Work mode</label>
+        <select name="work_mode" id="work_mode" class="form-select form-select-sm">
+          <option value="">—</option>
+          {% for w in work_modes %}<option value="{{ w }}" {{ 'selected' if opp and opp.work_mode == w }}>{{ w }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label small">Onsite city</label>
+        <input name="onsite_city" class="form-control form-control-sm" value="{{ opp.onsite_city or '' if opp else '' }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label small">Onsite state</label>
+        <input name="onsite_state" class="form-control form-control-sm" value="{{ opp.onsite_state or '' if opp else '' }}">
+      </div>
+    </div>
+  </div></div>
+
+  <button class="btn btn-primary">Save</button>
+  <a href="{{ url_for('opportunity_detail', opp_id=opp.id) if opp else url_for('opportunities') }}" class="btn btn-outline-secondary">Cancel</a>
+</form>
+
+<script>
+function syncUnit() {
+  const t = document.getElementById('pay_rate_type').value;
+  const u = t === 'Yearly' ? '/yr' : (t === 'Hourly' ? '/hr' : '');
+  document.getElementById('unit_min').textContent = u;
+  document.getElementById('unit_max').textContent = u;
+}
+document.getElementById('pay_rate_type').addEventListener('change', syncUnit);
+syncUnit();
+</script>
+{% endblock %}

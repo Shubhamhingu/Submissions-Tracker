@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Opportunities · Count Automation{% endblock %}
+{% block body %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h3 class="mb-0">Opportunities <span class="text-muted fs-6">({{ rows|length }})</span></h3>
+  <a href="{{ url_for('opportunity_new') }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Add</a>
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-3"><input type="text" name="q" value="{{ filters.q }}" class="form-control form-control-sm" placeholder="Search title / vendor / client…"></div>
+  <div class="col-6 col-md-2">
+    <select name="status" class="form-select form-select-sm">
+      <option value="">Any status</option>
+      {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if filters.status == s }}>{{ s }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-2">
+    <select name="employment_type" class="form-select form-select-sm">
+      <option value="">Any type</option>
+      {% for s in employment_types %}<option value="{{ s }}" {{ 'selected' if filters.employment_type == s }}>{{ s }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-2">
+    <select name="work_mode" class="form-select form-select-sm">
+      <option value="">Any mode</option>
+      {% for s in work_modes %}<option value="{{ s }}" {{ 'selected' if filters.work_mode == s }}>{{ s }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-2">
+    <select name="stage" class="form-select form-select-sm">
+      <option value="">Any stage</option>
+      <option value="interviewed" {{ 'selected' if filters.stage == 'interviewed' }}>Interviewed</option>
+      <option value="r2" {{ 'selected' if filters.stage == 'r2' }}>Round 2+</option>
+      <option value="final" {{ 'selected' if filters.stage == 'final' }}>Final round</option>
+    </select>
+  </div>
+  <div class="col-md-1"><button class="btn btn-sm btn-outline-primary w-100">Filter</button></div>
+</form>
+
+<div class="card chart-card">
+<div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+  <thead class="table-light">
+    <tr>
+      <th>Submitted</th><th>Position</th><th>Vendor</th><th>End client</th>
+      <th>Imp. partner</th><th>Type</th><th>Mode</th><th>Pay</th><th>Rounds</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for o in rows %}
+    <tr>
+      <td class="text-nowrap small">{{ o.submission_date | d }}</td>
+      <td><a href="{{ url_for('opportunity_detail', opp_id=o.id) }}" class="fw-semibold text-decoration-none">{{ o.position_title or '(untitled)' }}</a></td>
+      <td class="small">{{ o.name('vendor') or '—' }}</td>
+      <td class="small">{{ o.name('end_client') or '—' }}</td>
+      <td class="small">{{ o.name('imp_partner') or '—' }}</td>
+      <td>{% if o.employment_type %}<span class="badge text-bg-light">{{ o.employment_type }}</span>{% else %}<span class="text-muted small">—</span>{% endif %}</td>
+      <td class="small">{{ o.work_mode or '—' }}{% if o.onsite_city %} <span class="text-muted">· {{ o.onsite_city }}{{ ', ' ~ o.onsite_state if o.onsite_state }}</span>{% endif %}</td>
+      <td class="small text-nowrap">{{ o.pay_display or '—' }}</td>
+      <td>
+        {% if o.rounds %}
+          <span class="badge text-bg-info">R{{ o.max_round }}</span>
+          {% if o.has_final %}<span class="badge text-bg-success">Final</span>{% endif %}
+        {% else %}<span class="text-muted small">—</span>{% endif %}
+      </td>
+      <td class="text-nowrap">
+        <a href="{{ url_for('opportunity_edit', opp_id=o.id) }}" class="btn btn-sm btn-outline-secondary py-0"><i class="bi bi-pencil"></i></a>
+        <a href="{{ url_for('round_new', opp_id=o.id) }}" class="btn btn-sm btn-outline-primary py-0"><i class="bi bi-calendar-plus"></i></a>
+      </td>
+    </tr>
+  {% else %}
+    <tr><td colspan="10" class="text-center text-muted py-4">No opportunities. <a href="{{ url_for('import_view') }}">Import your CSV</a>.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+</div>
+{% endblock %}

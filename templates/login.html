@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Count Automation{% endblock %}
+{% block body %}
+<div class="container" style="max-width: 380px; margin-top: 12vh;">
+  <div class="card chart-card">
+    <div class="card-body p-4">
+      <h4 class="mb-1"><i class="bi bi-graph-up-arrow text-primary"></i> Count Automation</h4>
+      <p class="text-muted small mb-4">Job submission &amp; interview tracker</p>
+      <form method="post">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" autofocus required>
+        <button class="btn btn-primary w-100 mt-3">Sign in</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

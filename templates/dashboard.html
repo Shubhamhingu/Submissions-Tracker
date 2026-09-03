@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Count Automation{% endblock %}
+{% block body %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h3 class="mb-0">Dashboard</h3>
+  <form class="d-flex align-items-end gap-2" method="get">
+    <div>
+      <label class="form-label small mb-0">From (submission date)</label>
+      <input type="date" name="start" value="{{ start }}" class="form-control form-control-sm">
+    </div>
+    <div>
+      <label class="form-label small mb-0">To</label>
+      <input type="date" name="end" value="{{ end }}" class="form-control form-control-sm">
+    </div>
+    <button class="btn btn-sm btn-primary">Apply</button>
+    {% if start or end %}<a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-outline-secondary">Reset</a>{% endif %}
+  </form>
+</div>
+
+{% set c = stats.cards %}
+<div class="row g-3 mb-1">
+  {% set tiles = [
+    ('Total applied', c.total_applied, 'primary'),
+    ('Unique opportunities', c.unique_opportunities, 'primary'),
+    ('Interviewed', c.interviewed, 'info'),
+    ('Reached round 2', c.reached_r2, 'info'),
+    ('Reached round 3', c.reached_r3, 'info'),
+    ('Final round', c.reached_final, 'success'),
+    ('Interview rounds', c.total_rounds, 'secondary'),
+    ('Completed rounds', c.completed_rounds, 'secondary'),
+    ('Upcoming rounds', c.upcoming_rounds, 'warning'),
+    ('Rounds passed', c.passed_rounds, 'success'),
+  ] %}
+  {% for label, value, color in tiles %}
+  <div class="col-6 col-md-3 col-xl-2">
+    <div class="card stat-card h-100">
+      <div class="card-body py-3">
+        <div class="val text-{{ color }}">{{ value }}</div>
+        <div class="lbl mt-1">{{ label }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-3 mt-1">
+  <div class="col-lg-6"><div class="card chart-card"><div class="card-body">
+    <h6>Application → interview funnel</h6><canvas id="funnelChart"></canvas>
+  </div></div></div>
+  <div class="col-lg-3 col-md-6"><div class="card chart-card"><div class="card-body">
+    <h6>Full-time vs C2C</h6><canvas id="empChart"></canvas>
+  </div></div></div>
+  <div class="col-lg-3 col-md-6"><div class="card chart-card"><div class="card-body">
+    <h6>Remote vs Onsite</h6><canvas id="modeChart"></canvas>
+  </div></div></div>
+
+  <div class="col-lg-8"><div class="card chart-card"><div class="card-body">
+    <h6>Monthly trend — submissions &amp; interviews</h6><canvas id="trendChart"></canvas>
+  </div></div></div>
+  <div class="col-lg-4"><div class="card chart-card"><div class="card-body">
+    <h6>Cumulative submissions</h6><canvas id="cumChart"></canvas>
+  </div></div></div>
+
+  <div class="col-lg-6"><div class="card chart-card"><div class="card-body">
+    <h6>Top vendors</h6><canvas id="vendorChart"></canvas>
+  </div></div></div>
+  <div class="col-lg-6"><div class="card chart-card"><div class="card-body">
+    <h6>Top end clients</h6><canvas id="clientChart"></canvas>
+  </div></div></div>
+  <div class="col-lg-6"><div class="card chart-card"><div class="card-body">
+    <h6>Top implementation partners</h6><canvas id="impChart"></canvas>
+  </div></div></div>
+  <div class="col-lg-6"><div class="card chart-card"><div class="card-body">
+    <h6>Top prime vendors</h6><canvas id="primeChart"></canvas>
+  </div></div></div>
+
+  <div class="col-lg-6"><div class="card chart-card"><div class="card-body">
+    <h6>Submission status</h6><canvas id="statusChart"></canvas>
+  </div></div></div>
+  <div class="col-lg-6"><div class="card chart-card"><div class="card-body">
+    <h6>Submissions by pod</h6><canvas id="podChart"></canvas>
+  </div></div></div>
+</div>
+
+<script id="stats-data" type="application/json">{{ stats | tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const S = JSON.parse(document.getElementById('stats-data').textContent);
+const PALETTE = ['#2563eb','#0891b2','#16a34a','#d97706','#dc2626','#7c3aed','#db2777','#0d9488','#65a30d','#525252'];
+Chart.defaults.font.family = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+const ARC_BORDER = (window.APP_THEME === 'dark') ? '#1c2230' : '#ffffff';
+
+function bar(id, data, {horizontal=false, color=PALETTE[0]}={}) {
+  const el = document.getElementById(id); if (!el) return;
+  new Chart(el, {
+    type: 'bar',
+    data: { labels: data.labels, datasets: [{ data: data.values, backgroundColor: color, borderRadius: 4 }] },
+    options: {
+      indexAxis: horizontal ? 'y' : 'x',
+      plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: !horizontal } }, y: { beginAtZero: true, ticks: { precision: 0 } } }
+    }
+  });
+}
+function pie(id, data) {
+  const el = document.getElementById(id); if (!el) return;
+  new Chart(el, {
+    type: 'doughnut',
+    data: { labels: data.labels, datasets: [{ data: data.values, backgroundColor: PALETTE, borderColor: ARC_BORDER, borderWidth: 2 }] },
+    options: { plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+bar('funnelChart', S.funnel, { horizontal: true, color: '#2563eb' });
+pie('empChart', S.employment);
+pie('modeChart', S.work_mode);
+pie('statusChart', S.status);
+bar('podChart', S.pods, { color: '#7c3aed' });
+bar('vendorChart', S.vendors, { horizontal: true, color: '#0891b2' });
+bar('clientChart', S.end_clients, { horizontal: true, color: '#16a34a' });
+bar('impChart', S.imp_partners, { horizontal: true, color: '#d97706' });
+bar('primeChart', S.prime_vendors, { horizontal: true, color: '#db2777' });
+
+const trendEl = document.getElementById('trendChart');
+if (trendEl) new Chart(trendEl, {
+  type: 'line',
+  data: { labels: S.trend.months, datasets: [
+    { label: 'Submissions', data: S.trend.submissions, borderColor: '#2563eb', backgroundColor: '#2563eb22', tension: .15, fill: true },
+    { label: 'Interviews scheduled', data: S.trend.interviews, borderColor: '#d97706', backgroundColor: '#d9770622', tension: .15, fill: true },
+    { label: 'Interviews completed', data: S.trend.completed, borderColor: '#16a34a', backgroundColor: '#16a34a22', tension: .15, fill: true },
+  ]},
+  options: { plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+});
+
+const cumEl = document.getElementById('cumChart');
+if (cumEl) new Chart(cumEl, {
+  type: 'line',
+  data: { labels: S.trend.months, datasets: [
+    { label: 'Cumulative', data: S.trend.cumulative_submissions, borderColor: '#7c3aed', backgroundColor: '#7c3aed22', tension: .15, fill: true }
+  ]},
+  options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+});
+</script>
+{% endblock %}
