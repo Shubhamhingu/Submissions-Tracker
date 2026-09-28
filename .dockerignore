@@ -1,0 +1,19 @@
+# Ignore environment secrets
+.env
+*.env
+.env.*
+secrets.txt
+
+# Ignore source control
+.git
+.gitignore
+
+# Ignore heavy dependencies and build artifacts
+node_modules/
+npm-debug.log
+dist/
+build/
+.venv/
+venv/
+__pycache__/
+*.log

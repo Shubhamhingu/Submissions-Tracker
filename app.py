@@ -75,9 +75,10 @@ def create_app(config_object=Config):
 def _bootstrap_db(app):
     """On a fresh SQLite file, load seed.sql if it's present.
 
-    Lets a new deploy (e.g. Render with an empty persistent disk) come up with
+    Lets a new deploy (e.g. Render, whose filesystem starts empty) come up with
     the data committed in the repo instead of an empty database.  A no-op once
-    the database file exists.
+    the database file exists.  Never fatal: if anything goes wrong the app still
+    starts and ``db.create_all()`` builds empty tables.
     """
     uri = app.config.get("SQLALCHEMY_DATABASE_URI", "")
     if not uri.startswith("sqlite:///"):
@@ -90,17 +91,22 @@ def _bootstrap_db(app):
         return
     import sqlite3
 
-    parent = os.path.dirname(path)
-    if parent:
-        os.makedirs(parent, exist_ok=True)
-    conn = sqlite3.connect(path)
     try:
-        with open(seed, "r", encoding="utf-8") as fh:
-            conn.executescript(fh.read())
-        conn.commit()
+        parent = os.path.dirname(path)
+        if parent and not os.path.isdir(parent):
+            os.makedirs(parent, exist_ok=True)
+        conn = sqlite3.connect(path)
+        try:
+            with open(seed, "r", encoding="utf-8") as fh:
+                conn.executescript(fh.read())
+            conn.commit()
+        finally:
+            conn.close()
         app.logger.info("Bootstrapped database from seed.sql")
-    finally:
-        conn.close()
+    except OSError as exc:
+        app.logger.warning(
+            "Could not bootstrap %s from seed.sql (%s); starting empty.", path, exc
+        )
 
 
 def _run_migrations():

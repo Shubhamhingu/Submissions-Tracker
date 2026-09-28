@@ -6,7 +6,8 @@ from app import app
 
 
 def main():
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(host="0.0.0.0", port=8000)
 
 
 if __name__ == "__main__":
